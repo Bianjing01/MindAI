@@ -1,36 +1,64 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "mysql"
+  url      = "mysql://next:020128@localhost:3306/next"
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
+  id        Int         @id @default(autoincrement())
+  email     String      @unique
   password  String
   name      String
   avatar    String?
-  createdAt DateTime @default(now())
+  createdAt DateTime    @default(now())
+  image     String?
+  posts     Post[]
+  comments  Comment[]
+  testResults TestResult[] // 反向关系字段
 }
 
 model Post {
-  id        Int       @id @default(autoincrement())
-  title     String
-  content   String
-  category  String
-  status    String    @default("")
-  authorName String   @default("")
-  likes     Int       @default(0)
-  comments  Int       @default(0)
-  views     Int       @default(0)
-  createdAt DateTime  @default(now())
+  id         Int       @id @default(autoincrement())
+  title      String
+  content    String    @db.Text
+  category   String
+  status     String    @default("")
+  authorName String    @default("")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
+  comments   Comment[]
+  likes      Int       @default(0)
+  views      Int       @default(0)
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  postId    Int
+  userId    Int
+  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model TestResult {
+  id        String      @id @default(cuid())
+  userId    Int         // 修改为 Int 类型
+  category  String      // 测评类别
+  score     Float       // 分数
+  details   String      // 详细分析
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([category])
 }

@@ -69,7 +69,11 @@ export async function POST(request: Request) {
       const analysisResult = JSON.parse(cleanedContent);
       
       // 更新统计数据
-      await fetch('/api/emotion-stats', {
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : `http://localhost:${process.env.PORT || 3000}`;
+
+      await fetch(`${baseUrl}/api/emotion-stats`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

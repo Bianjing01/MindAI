@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
@@ -20,17 +22,19 @@ export async function GET(request: Request) {
     const posts = await prisma.post.findMany({
       where,
       orderBy,
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        category: true,
-        status: true,
-        authorName: true,
-        likes: true,
-        comments: true,
-        views: true,
-        createdAt: true,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true
+          }
+        },
+        _count: {
+          select: {
+            comments: true
+          }
+        }
       }
     });
 
@@ -38,7 +42,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Error fetching posts:', error);
     return NextResponse.json(
-      { error: '获取帖子失败' },
+      { error: '获取帖子列表失败' },
       { status: 500 }
     );
   }
@@ -46,8 +50,16 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { title, content, category, authorName = '匿名用户' } = body;
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: '请先登录' },
+        { status: 401 }
+      );
+    }
+
+    const { title, content, category, authorName } = await request.json();
 
     if (!title || !content || !category) {
       return NextResponse.json(
@@ -61,11 +73,24 @@ export async function POST(request: Request) {
         title,
         content,
         category,
-        authorName,
+        authorName: authorName || session.user.name,
         status: '',
         likes: 0,
-        comments: 0,
         views: 0,
+        user: {
+          connect: {
+            id: session.user.id
+          }
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true
+          }
+        }
       }
     });
 
@@ -73,7 +98,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error creating post:', error);
     return NextResponse.json(
-      { error: '发布帖子失败' },
+      { error: '创建帖子失败' },
       { status: 500 }
     );
   }

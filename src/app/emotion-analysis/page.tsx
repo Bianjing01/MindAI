@@ -11,6 +11,17 @@ interface EmotionValue {
   调节: string[];
 }
 
+interface Stats {
+  totalCount: number;
+  emotionDistribution: {
+    [key: string]: number;
+  };
+  dailyTrends: Array<{
+    date: string;
+    score: number;
+  }>;
+}
+
 const analysisTypes = [
   {
     id: 'daily',
@@ -45,7 +56,7 @@ const analysisTypes = [
 export default function EmotionAnalysis() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState('daily');
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<Stats>({
     totalCount: 0,
     emotionDistribution: {},
     dailyTrends: []
@@ -54,7 +65,11 @@ export default function EmotionAnalysis() {
   // 获取统计数据
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/emotion-stats');
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : window.location.origin;
+
+      const response = await fetch(`${baseUrl}/api/emotion-stats`);
       const data = await response.json();
       setStats(data);
     } catch (error) {
@@ -99,11 +114,11 @@ export default function EmotionAnalysis() {
             </div>
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">主要情绪</h3>
-              <div className="flex items-center space-x-2">
-                {Object.entries(stats.emotionDistribution).map(([emotion, count]) => (
+              <div className="grid grid-cols-5 gap-4">
+                {Object.entries(stats.emotionDistribution).map(([emotion, count]: [string, number]) => (
                   <div
                     key={emotion}
-                    className="flex flex-col items-center"
+                    className="flex flex-col items-center p-2 rounded-lg bg-gray-50"
                   >
                     <div className="text-sm text-gray-600">{emotion}</div>
                     <div className="text-lg font-semibold text-blue-500">{count}</div>
@@ -114,7 +129,7 @@ export default function EmotionAnalysis() {
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">情绪趋势</h3>
               <div className="flex items-end space-x-2 h-20">
-                {stats.dailyTrends.map((item: any, index: number) => (
+                {stats.dailyTrends.map((item, index) => (
                   <div
                     key={index}
                     className="flex flex-col items-center"

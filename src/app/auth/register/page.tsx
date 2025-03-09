@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
 
 export default function Register() {
   const router = useRouter();
@@ -55,9 +56,8 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      console.log('Submitting registration form:', formData);
-      
-      const response = await fetch('/api/auth/register', {
+      // 注册
+      const registerResponse = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,27 +65,19 @@ export default function Register() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      if (!registerResponse.ok) {
+        const data = await registerResponse.json();
         throw new Error(data.error || '注册失败');
       }
 
-      console.log('Registration successful:', data);
-
       // 注册成功后自动登录
-      const loginResponse = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+      const result = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
       });
 
-      if (!loginResponse.ok) {
+      if (result?.error) {
         throw new Error('登录失败');
       }
 
@@ -132,7 +124,7 @@ export default function Register() {
             </div>
           )}
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 邮箱

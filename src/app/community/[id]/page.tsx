@@ -10,7 +10,11 @@ interface Post {
   content: string;
   category: string;
   status: string;
-  authorName: string;
+  user: {
+    id: number;
+    name: string;
+    image: string;
+  } | null;
   likes: number;
   comments: number;
   views: number;
@@ -20,8 +24,12 @@ interface Post {
 interface Comment {
   id: number;
   content: string;
-  authorName: string;
   createdAt: string;
+  user: {
+    id: number;
+    name: string;
+    image: string;
+  } | null;
 }
 
 export default function PostDetail({ params }: { params: { id: string } }) {
@@ -31,10 +39,7 @@ export default function PostDetail({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isLiked, setIsLiked] = useState(false);
-  const [newComment, setNewComment] = useState({
-    content: '',
-    authorName: ''
-  });
+  const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -87,16 +92,33 @@ export default function PostDetail({ params }: { params: { id: string } }) {
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!post) return;
+
+    if (!newComment.trim()) {
+      alert('请输入评论内容');
+      return;
+    }
+
+    // 从 localStorage 获取用户信息
+    const savedUser = localStorage.getItem('user');
+    if (!savedUser) {
+      alert('请先登录');
+      router.push('/auth/login');
+      return;
+    }
+
+    const user = JSON.parse(savedUser);
 
     try {
       setIsSubmitting(true);
-      const response = await fetch(`/api/posts/${post.id}/comments`, {
+      const response = await fetch(`/api/posts/${post?.id}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newComment),
+        body: JSON.stringify({ 
+          content: newComment,
+          userId: user.id
+        }),
       });
 
       if (!response.ok) {
@@ -105,13 +127,16 @@ export default function PostDetail({ params }: { params: { id: string } }) {
 
       const comment = await response.json();
       setComments([comment, ...comments]);
-      setPost({
-        ...post,
-        comments: post.comments + 1
-      });
-      setNewComment({ content: '', authorName: '' });
+      if (post) {
+        setPost({
+          ...post,
+          comments: post.comments + 1
+        });
+      }
+      setNewComment('');
     } catch (err) {
       console.error('发表评论失败:', err);
+      alert('评论失败，请重试');
     } finally {
       setIsSubmitting(false);
     }
@@ -139,10 +164,7 @@ export default function PostDetail({ params }: { params: { id: string } }) {
               {error || '帖子不存在'}
             </div>
             <div className="mt-4">
-              <Link
-                href="/community"
-                className="text-blue-500 hover:text-blue-600"
-              >
+              <Link href="/community" className="text-blue-500 hover:text-blue-600">
                 返回社区
               </Link>
             </div>
@@ -172,12 +194,12 @@ export default function PostDetail({ params }: { params: { id: string } }) {
             <div className="flex items-start space-x-4">
               <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
                 <span className="text-gray-600 font-medium">
-                  {post.authorName[0]}
+                  {post.user?.name?.[0] || '匿'}
                 </span>
               </div>
               <div className="flex-1">
                 <div className="flex items-center space-x-2">
-                  <span className="font-medium text-gray-900">{post.authorName}</span>
+                  <span className="font-medium text-gray-900">{post.user?.name || '匿名用户'}</span>
                   <span className="text-sm text-gray-500">
                     {new Date(post.createdAt).toLocaleString()}
                   </span>
@@ -200,7 +222,7 @@ export default function PostDetail({ params }: { params: { id: string } }) {
                 </div>
 
                 {/* 交互按钮 */}
-                <div className="flex items-center space-x-6 mt-8 pt-6 border-t">
+                <div className="flex items-center space-x-6 mt-6">
                   <button
                     onClick={handleLike}
                     className={`flex items-center space-x-1 ${
@@ -232,68 +254,48 @@ export default function PostDetail({ params }: { params: { id: string } }) {
 
           {/* 评论区 */}
           <div className="mt-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">评论 ({post.comments})</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              评论 ({comments.length})
+            </h2>
 
-            {/* 评论表单 */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <form onSubmit={handleSubmitComment} className="space-y-4">
-                <div>
-                  <label htmlFor="authorName" className="block text-sm font-medium text-gray-700 mb-1">
-                    昵称
-                  </label>
-                  <input
-                    type="text"
-                    id="authorName"
-                    value={newComment.authorName}
-                    onChange={(e) => setNewComment({ ...newComment, authorName: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="请输入昵称"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-                    评论内容
-                  </label>
-                  <textarea
-                    id="content"
-                    value={newComment.content}
-                    onChange={(e) => setNewComment({ ...newComment, content: e.target.value })}
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="请输入评论内容"
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors
-                      ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    {isSubmitting ? '发表中...' : '发表评论'}
-                  </button>
-                </div>
-              </form>
-            </div>
+            {/* 评论输入框 */}
+            <form onSubmit={handleSubmitComment} className="mb-6">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="写下你的评论..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                rows={3}
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="mt-2 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+              >
+                {isSubmitting ? '发表中...' : '发表评论'}
+              </button>
+            </form>
 
             {/* 评论列表 */}
             <div className="space-y-4">
               {comments.map((comment) => (
-                <div key={comment.id} className="bg-white rounded-lg shadow-sm p-6">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-gray-600 font-medium">
-                        {comment.authorName[0]}
+                <div key={comment.id} className="bg-white rounded-lg shadow-sm p-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                      <span className="text-gray-600 text-sm">
+                        {comment.user?.name?.[0] || '匿'}
                       </span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <span className="font-medium text-gray-900">{comment.authorName}</span>
+                        <span className="font-medium text-gray-900">
+                          {comment.user?.name || '匿名用户'}
+                        </span>
                         <span className="text-sm text-gray-500">
                           {new Date(comment.createdAt).toLocaleString()}
                         </span>
                       </div>
-                      <p className="text-gray-600 mt-2">{comment.content}</p>
+                      <p className="mt-1 text-gray-600">{comment.content}</p>
                     </div>
                   </div>
                 </div>

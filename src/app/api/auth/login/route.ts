@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import prisma from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -9,14 +9,21 @@ export async function POST(request: Request) {
     // 验证输入
     if (!email || !password) {
       return NextResponse.json(
-        { error: '请填写邮箱和密码' },
+        { error: '请输入邮箱和密码' },
         { status: 400 }
       );
     }
 
     // 查找用户
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        name: true,
+        image: true,
+      },
     });
 
     if (!user) {
@@ -27,8 +34,8 @@ export async function POST(request: Request) {
     }
 
     // 验证密码
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
       return NextResponse.json(
         { error: '密码错误' },
         { status: 401 }
@@ -37,9 +44,11 @@ export async function POST(request: Request) {
 
     // 返回用户信息（不包含密码）
     const { password: _, ...userWithoutPassword } = user;
-    return NextResponse.json({ user: userWithoutPassword });
+    return NextResponse.json({
+      user: userWithoutPassword
+    });
   } catch (error) {
-    console.error('登录失败:', error);
+    console.error('Login error:', error);
     return NextResponse.json(
       { error: '登录失败' },
       { status: 500 }
