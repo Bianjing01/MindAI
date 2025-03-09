@@ -239,6 +239,61 @@ export default function AbilityTest() {
     router.push('/test-analysis');
   };
 
+  const handleSaveAndPrint = async () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        alert('请先登录');
+        router.push('/login');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const userId = parseInt(user.id); // 确保转换为整数
+
+      const dimensionScores = calculateDimensionScores();
+      const totalScore = Math.round(
+        dimensionScores.reduce((sum, dim) => sum + dim.score, 0) / dimensions.length
+      );
+      
+      const response = await fetch('/api/test-results/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          category: 'ability',
+          scores: dimensionScores.reduce((acc: { [key: string]: number }, dim) => {
+            acc[dim.id] = Math.round(dim.score);
+            return acc;
+          }, {}),
+          totalScore,
+          suggestions: [
+            '建立清晰的职业发展规划，设定短期和长期目标',
+            '持续学习新技能，保持知识更新和能力提升',
+            '主动寻求具有挑战性的项目和任务',
+            '培养跨领域协作能力，提升团队合作效率',
+            '注重时间管理，提高工作效率和质量',
+            '保持开放学习的心态，接受新观点和方法',
+            '定期进行自我评估，找出需要改进的领域'
+          ]
+        })
+      });
+
+      if (response.ok) {
+        alert('测评结果已保存');
+        router.push('/profile');
+      } else {
+        throw new Error('保存失败');
+      }
+    } catch (error) {
+      console.error('保存测评结果失败:', error);
+      alert('保存失败，请重试');
+    }
+  };
+
+
   if (showResult) {
     const level = calculateScore();
     const healthLevel = healthLevels[level];
@@ -341,6 +396,7 @@ export default function AbilityTest() {
                 重新测试
               </button>
               <button
+                onClick={handleSaveAndPrint}
                 className="px-8 py-3 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 打印报告

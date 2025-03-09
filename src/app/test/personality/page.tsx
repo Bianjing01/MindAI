@@ -241,6 +241,58 @@ export default function PersonalityTest() {
     router.push('/test-analysis');
   };
 
+  const handleSaveAndPrint = async () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        alert('请先登录');
+        router.push('/login');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const userId = parseInt(user.id); // 确保转换为整数
+
+      const dimensionScores = calculateDimensionScores();
+      const totalScore = Math.round(
+        dimensionScores.reduce((sum, dim) => sum + dim.score, 0) / dimensions.length
+      );
+      
+      const response = await fetch('/api/test-results/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          category: 'personality',
+          scores: dimensionScores.reduce((acc: { [key: string]: number }, dim) => {
+            acc[dim.id] = Math.round(dim.score);
+            return acc;
+          }, {}),
+          totalScore,
+          suggestions: [
+            '多与孩子进行有效沟通，倾听他们的想法和感受',
+            '在教育方式上保持耐心和适度，避免过分严厉',
+            '增加与孩子的互动时间，参与他们的学习和娱乐',
+            '尊重孩子的个性发展，给予适当的自主空间',
+            '关注孩子的情绪变化，及时给予情感支持'
+          ]
+        })
+      });
+
+      if (response.ok) {
+        alert('测评结果已保存');
+        router.push('/profile');
+      } else {
+        throw new Error('保存失败');
+      }
+    } catch (error) {
+      console.error('保存测评结果失败:', error);
+      alert('保存失败，请重试');
+    }
+  };
+
   if (showResult) {
     const level = calculateScore();
     const healthLevel = healthLevels[level];
@@ -343,6 +395,7 @@ export default function PersonalityTest() {
                 重新测试
               </button>
               <button
+                onClick={handleSaveAndPrint}
                 className="px-8 py-3 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 打印报告

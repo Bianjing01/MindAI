@@ -25,9 +25,9 @@ export default function HomeClient() {
 
   return (
     <>
-      <h1 className="text-4xl font-bold text-center py-8">
+      {/* <h1 className="text-4xl font-bold text-center py-8">
         欢迎来到 MindAI{user ? `, ${user.name}` : ''}
-      </h1>
+      </h1> */}
       <Carousel />
       <TestNav />
       <EmotionList />

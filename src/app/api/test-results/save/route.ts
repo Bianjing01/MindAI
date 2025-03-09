@@ -3,24 +3,25 @@ import prisma from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
-    const { userId, category, scores, suggestions } = data;
+    const { userId, category, scores, totalScore, suggestions } = await request.json();
 
-    // 计算总分
-    const totalScore = Object.values(scores).reduce((a, b) => a + b, 0) / Object.keys(scores).length;
+    // 确保将userId转换为整数
+    const userIdInt = parseInt(userId);
+
+    // 将详细信息转换为JSON字符串
+    const details = JSON.stringify({
+      scores,
+      suggestions
+    });
 
     const result = await prisma.testResult.create({
       data: {
-        userId: parseInt(userId),
+        userId: userIdInt,
         category,
-        score: totalScore,
-        details: JSON.stringify({
-          scores,
-          suggestions,
-          date: new Date().toISOString(),
-        }),
-        createdAt: new Date(),
-      },
+        scores,
+        totalScore,
+        details,
+      }
     });
 
     return NextResponse.json(result);

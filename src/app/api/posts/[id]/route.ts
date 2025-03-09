@@ -6,20 +6,21 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const postId = parseInt(params.id);
-    if (isNaN(postId)) {
-      return NextResponse.json(
-        { error: '无效的帖子ID' },
-        { status: 400 }
-      );
-    }
-
-    // 获取帖子并增加浏览量
-    const post = await prisma.post.update({
-      where: { id: postId },
-      data: {
-        views: {
-          increment: 1
+    const post = await prisma.post.findUnique({
+      where: {
+        id: parseInt(params.id)
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            image: true
+          }
+        },
+        _count: {
+          select: {
+            comments: true
+          }
         }
       }
     });
@@ -31,7 +32,22 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(post);
+    // 处理匿名帖子
+    const processedPost = {
+      ...post,
+      author: post.isAnonymous ? {
+        name: '匿名用户',
+        image: '/default-avatar.png'
+      } : {
+        name: post.user.name,
+        image: post.user.image || '/default-avatar.png'
+      }
+    };
+
+    // 删除原始的 user 字段
+    delete (processedPost as any).user;
+
+    return NextResponse.json(processedPost);
   } catch (error) {
     console.error('获取帖子失败:', error);
     return NextResponse.json(

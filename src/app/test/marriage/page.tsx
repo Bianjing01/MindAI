@@ -239,6 +239,58 @@ export default function MarriageTest() {
     router.push('/test-analysis');
   };
 
+  
+
+  const handleSaveAndPrint = async () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        alert('请先登录');
+        router.push('/login');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const userId = parseInt(user.id); // 确保转换为整数
+
+      const dimensionScores = calculateDimensionScores();
+      const totalScore = Math.round(
+        dimensionScores.reduce((sum, dim) => sum + dim.score, 0) / dimensions.length
+      );
+      
+      // 保存测评结果到数据库
+      const response = await fetch('/api/test-results', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          category: 'marriage',
+          scores: dimensionScores.reduce((acc: { [key: string]: number }, dim) => {
+            acc[dim.id] = Math.round(dim.score);
+            return acc;
+          }, {}),
+          totalScore,
+          details: `婚恋测评结果：总分 ${totalScore}分\n` + 
+            Object.entries(dimensionScores)
+              .map(([dimension, score]) => `${dimension}: ${score}分`)
+              .join('\n')
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('保存测评结果失败');
+      }
+
+      // 打印报告
+      window.print();
+    } catch (error) {
+      console.error('保存测评结果失败:', error);
+      alert('保存测评结果失败，请重试');
+    }
+  };
+
   if (showResult) {
     const level = calculateScore();
     const healthLevel = healthLevels[level];
@@ -246,6 +298,7 @@ export default function MarriageTest() {
     const totalScore = Math.round(
       dimensionScores.reduce((sum, dim) => sum + dim.score, 0) / dimensions.length
     );
+    
 
     return (
       <div className="min-h-screen bg-white">
@@ -341,6 +394,7 @@ export default function MarriageTest() {
                 重新测试
               </button>
               <button
+                onClick={handleSaveAndPrint}
                 className="px-8 py-3 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 打印报告

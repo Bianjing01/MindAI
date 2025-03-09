@@ -4,302 +4,241 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-interface Post {
-  id: number;
-  title: string;
-  content: string;
-  category: string;
-  status: string;
-  user: {
-    id: number;
-    name: string;
-    image: string;
-  } | null;
-  likes: number;
-  comments: number;
-  views: number;
-  createdAt: string;
-}
+const ANONYMOUS_AVATAR = '/images/anonymous-avatar.png';
 
 interface Comment {
   id: number;
   content: string;
   createdAt: string;
-  user: {
-    id: number;
+  author: {
     name: string;
     image: string;
-  } | null;
+  };
+}
+
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  category: string;
+  createdAt: string;
+  author: {
+    name: string;
+    image: string;
+  };
+  _count: {
+    comments: number;
+  };
 }
 
 export default function PostDetail({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isLiked, setIsLiked] = useState(false);
   const [newComment, setNewComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [postResponse, commentsResponse] = await Promise.all([
-          fetch(`/api/posts/${params.id}`),
-          fetch(`/api/posts/${params.id}/comments`)
-        ]);
-
-        if (!postResponse.ok) {
-          throw new Error('帖子不存在');
-        }
-
-        const postData = await postResponse.json();
-        const commentsData = await commentsResponse.json();
-
-        setPost(postData);
-        setComments(commentsData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '获取数据失败');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetchPost();
+    fetchComments();
   }, [params.id]);
 
-  const handleLike = async () => {
-    if (!post) return;
-
+  const fetchPost = async () => {
     try {
-      const response = await fetch(`/api/posts/${post.id}/like`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error('点赞失败');
+      const response = await fetch(`/api/posts/${params.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPost(data);
       }
-
-      const updatedPost = await response.json();
-      setPost(updatedPost);
-      setIsLiked(true);
-    } catch (err) {
-      console.error('点赞失败:', err);
+    } catch (error) {
+      console.error('获取帖子失败:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmitComment = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const fetchComments = async () => {
+    try {
+      const response = await fetch(`/api/posts/${params.id}/comments`);
+      if (response.ok) {
+        const data = await response.json();
+        setComments(data);
+      }
+    } catch (error) {
+      console.error('获取评论失败:', error);
+    }
+  };
 
+  const handleSubmitComment = async () => {
     if (!newComment.trim()) {
       alert('请输入评论内容');
       return;
     }
 
-    // 从 localStorage 获取用户信息
-    const savedUser = localStorage.getItem('user');
-    if (!savedUser) {
-      alert('请先登录');
-      router.push('/auth/login');
-      return;
-    }
-
-    const user = JSON.parse(savedUser);
-
     try {
-      setIsSubmitting(true);
-      const response = await fetch(`/api/posts/${post?.id}/comments`, {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        alert('请先登录');
+        router.push('/login');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const userId = parseInt(user.id);
+
+      const response = await fetch(`/api/posts/${params.id}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           content: newComment,
-          userId: user.id
+          userId: userId,
+          isAnonymous: isAnonymous
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('发表评论失败');
+      if (response.ok) {
+        setNewComment('');
+        setIsAnonymous(false);
+        // 先更新评论列表
+        await fetchComments();
+        // 然后更新帖子数据以获取最新的评论数
+        await fetchPost();
+      } else {
+        throw new Error('评论失败');
       }
-
-      const comment = await response.json();
-      setComments([comment, ...comments]);
-      if (post) {
-        setPost({
-          ...post,
-          comments: post.comments + 1
-        });
-      }
-      setNewComment('');
-    } catch (err) {
-      console.error('发表评论失败:', err);
+    } catch (error) {
+      console.error('提交评论失败:', error);
       alert('评论失败，请重试');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric'
+    });
+  };
+
+  // 更新评论区标题显示
+  const commentCount = comments.length;
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
-            <p className="mt-2 text-gray-600">加载中...</p>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl text-gray-600">加载中...</div>
       </div>
     );
   }
 
-  if (error || !post) {
+  if (!post) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg">
-              {error || '帖子不存在'}
-            </div>
-            <div className="mt-4">
-              <Link href="/community" className="text-blue-500 hover:text-blue-600">
-                返回社区
-              </Link>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl text-gray-600">帖子不存在</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4">
+        <div className="max-w-4xl mx-auto">
           {/* 返回按钮 */}
           <Link
             href="/community"
-            className="inline-flex items-center text-blue-500 hover:text-blue-600 mb-6"
+            className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-6"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
             </svg>
             返回社区
           </Link>
 
           {/* 帖子内容 */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-gray-600 font-medium">
-                  {post.user?.name?.[0] || '匿'}
-                </span>
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="flex items-center mb-4">
+              <img
+                src={post.author?.image || ANONYMOUS_AVATAR}
+                alt={post.author?.name || '匿名用户'}
+                className="w-10 h-10 rounded-full mr-3"
+              />
+              <div>
+                <div className="font-semibold">{post.author?.name || '匿名用户'}</div>
+                <div className="text-sm text-gray-500">{formatDate(post.createdAt)}</div>
               </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium text-gray-900">{post.user?.name || '匿名用户'}</span>
-                  <span className="text-sm text-gray-500">
-                    {new Date(post.createdAt).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2 mt-1">
-                  <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded">
-                    {post.category}
-                  </span>
-                  {post.status && (
-                    <span className="px-2 py-1 bg-green-50 text-green-600 text-xs rounded">
-                      {post.status}
-                    </span>
-                  )}
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900 mt-4">
-                  {post.title}
-                </h1>
-                <div className="prose mt-4">
-                  <p className="text-gray-600">{post.content}</p>
-                </div>
-
-                {/* 交互按钮 */}
-                <div className="flex items-center space-x-6 mt-6">
-                  <button
-                    onClick={handleLike}
-                    className={`flex items-center space-x-1 ${
-                      isLiked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
-                    } transition-colors`}
-                  >
-                    <svg className="w-6 h-6" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                    <span>{post.likes}</span>
-                  </button>
-                  <div className="flex items-center space-x-1 text-gray-500">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                    <span>{post.comments}</span>
-                  </div>
-                  <div className="flex items-center space-x-1 text-gray-500">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    <span>{post.views}</span>
-                  </div>
-                </div>
-              </div>
+            </div>
+            <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
+            <p className="text-gray-700 whitespace-pre-wrap mb-4">{post.content}</p>
+            <div className="flex items-center text-gray-500 text-sm">
+              <span className="mr-4">分类：{post.category}</span>
+              <span>评论：{commentCount}</span>
             </div>
           </div>
 
           {/* 评论区 */}
-          <div className="mt-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              评论 ({comments.length})
-            </h2>
-
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-bold mb-6">评论 ({commentCount})</h2>
+            
             {/* 评论输入框 */}
-            <form onSubmit={handleSubmitComment} className="mb-6">
+            <div className="mb-6">
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="写下你的评论..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={3}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={4}
               />
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="mt-2 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-              >
-                {isSubmitting ? '发表中...' : '发表评论'}
-              </button>
-            </form>
+              <div className="mt-3 flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="anonymous"
+                    checked={isAnonymous}
+                    onChange={(e) => setIsAnonymous(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="anonymous" className="ml-2 text-sm text-gray-700">
+                    匿名评论
+                  </label>
+                </div>
+                <button
+                  onClick={handleSubmitComment}
+                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  发表评论
+                </button>
+              </div>
+            </div>
 
             {/* 评论列表 */}
-            <div className="space-y-4">
+            <div className="space-y-6">
               {comments.map((comment) => (
-                <div key={comment.id} className="bg-white rounded-lg shadow-sm p-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-gray-600 text-sm">
-                        {comment.user?.name?.[0] || '匿'}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium text-gray-900">
-                          {comment.user?.name || '匿名用户'}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          {new Date(comment.createdAt).toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-gray-600">{comment.content}</p>
+                <div key={comment.id} className="border-b border-gray-100 pb-6 last:border-0">
+                  <div className="flex items-center mb-3">
+                    <img
+                      src={comment.author?.image || ANONYMOUS_AVATAR}
+                      alt={comment.author?.name || '匿名用户'}
+                      className="w-8 h-8 rounded-full mr-3"
+                    />
+                    <div>
+                      <div className="font-medium">{comment.author?.name || '匿名用户'}</div>
+                      <div className="text-sm text-gray-500">{formatDate(comment.createdAt)}</div>
                     </div>
                   </div>
+                  <p className="text-gray-700">{comment.content}</p>
                 </div>
               ))}
+              {comments.length === 0 && (
+                <div className="text-center text-gray-500 py-8">
+                  还没有评论，来说两句吧~
+                </div>
+              )}
             </div>
           </div>
         </div>

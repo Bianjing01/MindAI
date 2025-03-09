@@ -21,6 +21,9 @@ model User {
   posts     Post[]
   comments  Comment[]
   testResults TestResult[] // 反向关系字段
+  moods     MoodRecord[]
+  likes     Like[]
+  favorites Favorite[]
 }
 
 model Post {
@@ -33,10 +36,14 @@ model Post {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   userId     Int
+  isAnonymous Boolean  @default(false)
   user       User      @relation(fields: [userId], references: [id])
   comments   Comment[]
-  likes      Int       @default(0)
-  views      Int       @default(0)
+  viewCount  Int       @default(0)
+  likes      Like[]
+  favorites  Favorite[]
+
+  @@index([userId])
 }
 
 model Comment {
@@ -46,19 +53,63 @@ model Comment {
   updatedAt DateTime @updatedAt
   postId    Int
   userId    Int
+  isAnonymous Boolean @default(false)
   post      Post     @relation(fields: [postId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
+
+  @@index([postId])
+  @@index([userId])
 }
 
 model TestResult {
-  id        String      @id @default(cuid())
-  userId    Int         // 修改为 Int 类型
-  category  String      // 测评类别
-  score     Float       // 分数
-  details   String      // 详细分析
-  createdAt DateTime    @default(now())
-  user      User        @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  category  String
+  scores    Json
+  totalScore Int
+  details   String   @db.Text  // 修改为 Text 类型，可以存储更长的文本
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
-  @@index([category])
+}
+
+model MoodRecord {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  date      String   // YYYY-MM-DD 格式
+  mood      String
+  note      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([date])
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@index([postId])
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@index([postId])
 }

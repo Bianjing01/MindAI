@@ -1,23 +1,24 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+
+const ANONYMOUS_AVATAR = '/images/anonymous-avatar.png';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
+    const category = searchParams.get('category') || 'all';
     const sortBy = searchParams.get('sortBy') || 'latest';
-
-    let where = {};
-    if (category && category !== 'all') {
-      where = { category };
-    }
+    const userId = searchParams.get('userId');
 
     let orderBy: any = { createdAt: 'desc' };
     if (sortBy === 'popular') {
-      orderBy = { likes: 'desc' };
+      orderBy = [
+        { comments: { _count: 'desc' } },
+        { createdAt: 'desc' }
+      ];
     }
+
+    const where = category !== 'all' ? { category } : {};
 
     const posts = await prisma.post.findMany({
       where,
@@ -25,7 +26,97 @@ export async function GET(request: Request) {
       include: {
         user: {
           select: {
-            id: true,
+            name: true,
+            image: true
+          }
+        },
+        _count: {
+          select: {
+            comments: true,
+            likes: true,
+            favorites: true
+          }
+        },
+        likes: userId ? {
+          where: {
+            userId: parseInt(userId)
+          }
+        } : false,
+        favorites: userId ? {
+          where: {
+            userId: parseInt(userId)
+          }
+        } : false
+      }
+    });
+
+    // 处理返回数据
+    const processedPosts = posts.map(post => ({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      category: post.category,
+      createdAt: post.createdAt,
+      viewCount: post.viewCount,
+      author: post.isAnonymous ? {
+        name: '匿名用户',
+        image: ANONYMOUS_AVATAR
+      } : {
+        name: post.user.name,
+        image: post.user.image || ANONYMOUS_AVATAR
+      },
+      _count: {
+        comments: post._count.comments,
+        likes: post._count.likes,
+        favorites: post._count.favorites
+      },
+      isLiked: post.likes?.length > 0,
+      isFavorited: post.favorites?.length > 0
+    }));
+
+    return NextResponse.json(processedPosts);
+  } catch (error) {
+    console.error('获取帖子列表失败:', error);
+    return NextResponse.json(
+      { error: '获取帖子列表失败' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const { title, content, category, userId, isAnonymous } = await request.json();
+
+    // 获取用户信息
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        name: true,
+        image: true
+      }
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: '用户不存在' },
+        { status: 404 }
+      );
+    }
+
+    // 创建帖子
+    const post = await prisma.post.create({
+      data: {
+        title,
+        content,
+        category,
+        userId,
+        isAnonymous: isAnonymous || false,
+        authorName: user.name // 保存作者名字
+      },
+      include: {
+        user: {
+          select: {
             name: true,
             image: true
           }
@@ -38,65 +129,24 @@ export async function GET(request: Request) {
       }
     });
 
-    return NextResponse.json(posts);
-  } catch (error) {
-    console.error('Error fetching posts:', error);
-    return NextResponse.json(
-      { error: '获取帖子列表失败' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: '请先登录' },
-        { status: 401 }
-      );
-    }
-
-    const { title, content, category, authorName } = await request.json();
-
-    if (!title || !content || !category) {
-      return NextResponse.json(
-        { error: '缺少必要字段' },
-        { status: 400 }
-      );
-    }
-
-    const post = await prisma.post.create({
-      data: {
-        title,
-        content,
-        category,
-        authorName: authorName || session.user.name,
-        status: '',
-        likes: 0,
-        views: 0,
-        user: {
-          connect: {
-            id: session.user.id
-          }
-        }
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        }
+    // 处理返回数据
+    const processedPost = {
+      ...post,
+      author: isAnonymous ? {
+        name: '匿名用户',
+        image: ANONYMOUS_AVATAR
+      } : {
+        name: post.user.name,
+        image: post.user.image || ANONYMOUS_AVATAR
       }
-    });
+    };
 
-    return NextResponse.json(post);
+    // 删除敏感信息
+    delete (processedPost as any).user;
+
+    return NextResponse.json(processedPost);
   } catch (error) {
-    console.error('Error creating post:', error);
+    console.error('创建帖子失败:', error);
     return NextResponse.json(
       { error: '创建帖子失败' },
       { status: 500 }
