@@ -202,9 +202,9 @@ npx prisma generate
 npx prisma studio（检查状态）
 ```
 
-### 集成 Zustand 状态管理
+## 集成 Zustand 状态管理
 
-#### 安装 Zustand
+### 安装 Zustand
 
 Zustand 是一个轻量级的状态管理库。运行以下命令安装：
 
@@ -212,7 +212,7 @@ Zustand 是一个轻量级的状态管理库。运行以下命令安装：
 npm install zustand
 ```
 
-#### 创建 Store
+### 创建 Store
 
 在项目中创建一个 `store` 目录，并添加一个 `useStore.ts` 文件：
 
@@ -234,7 +234,7 @@ const useStore = create<StoreState>((set) => ({
 export default useStore;
 ```
 
-#### 在组件中使用 Store
+### 在组件中使用 Store
 
 在 `app/page.tsx` 中使用 Zustand Store：
 
@@ -263,7 +263,7 @@ export default function Home() {
 }
 ```
 
-#### 注意事项
+### 注意事项
 
 如果你在运行项目时遇到以下错误：
 
@@ -281,7 +281,7 @@ Unhandled Runtime Error
 
 ------
 
-### 提交代码
+提交代码
 
 最后，将代码提交到 Git 仓库：
 
@@ -291,7 +291,7 @@ git add .
 git commit -m "初始化 Next.js 项目"
 ```
 
-### 用cursor、墨刀、deepseek搭建页面
+## 用cursor、墨刀、deepseek搭建页面
 
 打开cursor，网上很多教程，这里不赘述，下载好打开就行
 
@@ -312,4 +312,46 @@ ctrl+I：我们打开问答框，找agent，自主编码工具
 
 
 npx prisma studio，可以查看数据库状态
+
+### 导航
+
+#### TestNav
+
+#### Navbar
+
+#### FloatingMenu
+
+### 首页
+
+#### 轮播图
+
+#### AI测试
+
+#### AI情绪
+
+#### 社区
+
+#### 我的
+
+### AI测试
+
+#### 亲子
+
+#### 能力
+
+#### 健康
+
+#### 婚姻
+
+#### 个人
+
+#### 社交
+
+### AI检测情绪
+
+### AI咨询
+
+### 心理社区
+
+
 

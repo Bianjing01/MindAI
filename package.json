@@ -14,6 +14,7 @@
     "@prisma/client": "^6.4.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.9",
+    "axios": "^1.8.2",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.4.8",
     "html2canvas": "^1.4.1",
@@ -33,5 +34,15 @@
     "postcss": "^8",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"
-  }
+  },
+  "description": "开发环境有node.js(16.8或者更高)，还有npm，通过命令来检查",
+  "main": "next.config.js",
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/ruanjianbianjing/my-next-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
 }
