@@ -11,6 +11,7 @@ interface TestResult {
   score: number;
   date: string;
   details: string;
+  totalScore: number;
 }
 
 interface User {
@@ -319,30 +320,31 @@ export default function ProfileClient() {
               ))}
             </div>
 
-            {/* 心情类型行 */}
-            {moodTypes.map((mood, index) => (
-              <div key={index} className="grid grid-cols-7 border-t border-gray-200">
-                {weekDays.map((day, dayIndex) => {
-                  const record = weekMoods.find(m => m.date === day.date);
-                  const isToday = day.date === new Date().toISOString().split('T')[0];
-                  return (
-                    <div
-                      key={dayIndex}
-                      className={`p-2 border-r border-gray-200 last:border-r-0 ${
-                        record?.mood === mood.name ? mood.color : ''
-                      } ${isToday ? 'bg-blue-50' : ''}`}
-                    >
-                      {record?.mood === mood.name && (
-                        <div className="flex flex-col items-center">
-                          <span className="text-xl">{mood.emoji}</span>
-                          <span className="text-xs mt-1">{record.note || mood.name}</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+            {/* 单行心情显示 */}
+            <div className="grid grid-cols-7">
+              {weekDays.map((day, dayIndex) => {
+                const record = weekMoods.find(m => m.date === day.date);
+                const mood = record ? moodTypes.find(m => m.name === record.mood) : null;
+                const isToday = day.date === new Date().toISOString().split('T')[0];
+                return (
+                  <div
+                    key={dayIndex}
+                    className={`p-4 min-h-[80px] flex items-center justify-center border-r border-gray-200 last:border-r-0 ${
+                      mood ? mood.color : 'bg-gray-50'
+                    } ${isToday ? 'bg-blue-50' : ''}`}
+                  >
+                    {mood ? (
+                      <div className="flex flex-col items-center">
+                        <span className="text-2xl">{mood.emoji}</span>
+                        <span className="text-xs mt-1">{record.note || mood.name}</span>
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 text-sm">未记录</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* 添加心情记录按钮 */}
@@ -470,7 +472,7 @@ export default function ProfileClient() {
                     <h3 className="font-bold text-lg">{category.name}</h3>
                     {result && (
                       <div className="text-2xl font-bold bg-white bg-opacity-20 px-3 py-1 rounded-full">
-                        {result.score}分
+                        {result.totalScore}分
                       </div>
                     )}
                   </div>

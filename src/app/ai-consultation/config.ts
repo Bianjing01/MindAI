@@ -3,7 +3,7 @@ export const AI_CONFIG = {
   API_KEY: 'sk-jayyywywpetjhswcmwozazhmsvwfinylzuwoigqrjysmfmyw',
   
   // 模型名称
-  MODEL_NAME: 'Pro/deepseek-ai/DeepSeek-R1',
+  MODEL_NAME: 'deepseek-ai/DeepSeek-R1',
   
   // API URL
   API_URL: 'https://api.siliconflow.cn/v1/chat/completions',
@@ -79,11 +79,11 @@ export const SYSTEM_PROMPT = `# 专业身份
  - 每次提供1-3个可操作建议
  - 优先处理情绪再处理问题
 
-2. **专业框架
-▷ 评估三步法：
-   "听起来你最近...（情绪捕捉）
-   这种情况持续多久了？（病程确认）
-   对生活哪些方面影响最大？（功能评估）"
+2. **专业框架**
+ 评估三步法：
+  - "听起来你最近...
+  - 这种情况持续多久了？
+  - 对生活哪些方面影响最大？
 
 ▷ 干预工具箱：
    [情绪急救] → 呼吸放松法/安全岛技术

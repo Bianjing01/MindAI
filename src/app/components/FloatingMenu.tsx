@@ -39,7 +39,7 @@ export default function FloatingMenu() {
         </div>
       </Link>
       <Link
-        href="/ai-consultation"
+        href="/ai-chat"
         className={`${menuItemStyle} flex items-center justify-center w-16 h-16 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors shadow-lg`}
       >
         <div className="flex flex-col items-center">

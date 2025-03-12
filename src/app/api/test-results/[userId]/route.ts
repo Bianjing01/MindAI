@@ -19,10 +19,10 @@ export async function GET(
     const formattedResults = results.reduce((acc, result) => {
       const details = JSON.parse(result.details);
       acc[result.category] = {
-        score: result.score,
+        category: result.category,
+        totalScore: result.totalScore,
         date: result.createdAt.toISOString(),
         details: details.suggestions.join('\n'),
-        dimensionScores: details.scores,
       };
       return acc;
     }, {} as Record<string, any>);
