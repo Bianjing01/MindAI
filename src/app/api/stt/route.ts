@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     // 创建新的 FormData 对象发送到 Silicon Flow API
     const apiFormData = new FormData();
     apiFormData.append('file', audioBlob, 'audio.wav');
-    apiFormData.append('model', 'whisper');
+    apiFormData.append('model', 'whisper/whisper-1');
     apiFormData.append('language', 'zh');
 
     const response = await fetch('https://api.siliconflow.cn/v1/audio/transcriptions', {

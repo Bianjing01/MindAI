@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
+import { VOICE_CONFIG } from '@/app/ai-chat/config';
 
 export async function POST(request: Request) {
   try {
-    const { text } = await request.json();
+    const { text, voice = VOICE_CONFIG.VOICE, speed = VOICE_CONFIG.SPEED, gain = VOICE_CONFIG.GAIN } = await request.json();
 
     // 使用 speech API 生成语音
     const response = await fetch('https://api.siliconflow.cn/v1/audio/speech', {
@@ -12,12 +13,12 @@ export async function POST(request: Request) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "FunAudioLLM/CosyVoice2-0.5B",
-        voice: "FunAudioLLM/CosyVoice2-0.5B:bella", // 使用系统预置音色
+        model: VOICE_CONFIG.MODEL,
+        voice: `${VOICE_CONFIG.MODEL}:${voice}`,  // 使用前端传递的 voice 参数
         input: text,
-        response_format: "mp3",
-        speed: 1.0,
-        gain: 0
+        response_format: VOICE_CONFIG.RESPONSE_FORMAT,
+        speed: speed,
+        gain: gain
       })
     });
     
@@ -45,4 +46,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
