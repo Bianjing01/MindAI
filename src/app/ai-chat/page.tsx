@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import useVoiceRecorder from '../hooks/useVoiceRecorder';
 import { VOICE_CONFIG } from './config';
 
@@ -15,6 +16,7 @@ export default function AIChatPage() {
   const [gain, setGain] = useState(VOICE_CONFIG.GAIN);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const pathname = usePathname();
 
   const voices = [
     { id: 'alex', name: 'Alex' },
@@ -176,15 +178,17 @@ export default function AIChatPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white p-4">
       <div className="max-w-4xl mx-auto">
-        {/* 顶部导航栏 */}
-        <div className="flex items-center space-x-2 mb-4">
-          <button className="p-2 hover:bg-purple-100 rounded-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <h1 className="text-xl font-medium">语音生成</h1>
-        </div>
+        {/* 只在非根路径下显示导航栏 */}
+        {pathname !== '/' && (
+          <div className="flex items-center space-x-2 mb-4">
+            <button className="p-2 hover:bg-purple-100 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <h1 className="text-xl font-medium">语音生成</h1>
+          </div>
+        )}
 
         <div className="grid grid-cols-[300px,1fr] gap-4">
           {/* 左侧控制面板 */}

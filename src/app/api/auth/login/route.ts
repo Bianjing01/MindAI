@@ -8,10 +8,10 @@ export async function POST(request: Request) {
 
     // 验证输入
     if (!email || !password) {
-      return NextResponse.json(
-        { error: '请输入邮箱和密码' },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        success: false,
+        error: '请输入邮箱和密码'
+      }, { status: 400 });
     }
 
     // 查找用户
@@ -27,31 +27,33 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: '用户不存在' },
-        { status: 401 }
-      );
+      return NextResponse.json({
+        success: false,
+        error: '用户不存在'
+      }, { status: 401 });
     }
 
     // 验证密码
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
-      return NextResponse.json(
-        { error: '密码错误' },
-        { status: 401 }
-      );
+      return NextResponse.json({
+        success: false,
+        error: '密码错误'
+      }, { status: 401 });
     }
 
     // 返回用户信息（不包含密码）
     const { password: _, ...userWithoutPassword } = user;
     return NextResponse.json({
+      success: true,
       user: userWithoutPassword
     });
+
   } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json(
-      { error: '登录失败' },
-      { status: 500 }
-    );
+    console.error('登录失败:', error);
+    return NextResponse.json({
+      success: false,
+      error: '服务器错误'
+    }, { status: 500 });
   }
 } 

@@ -234,37 +234,53 @@ export default function EmotionAnalysis() {
         <div className="max-w-6xl mx-auto">
           {/* 概览卡片 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">总分析次数</h3>
-              <div className="text-3xl font-bold text-blue-500">{stats.totalCount}</div>
+            <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <span className="mr-2">📊</span> 总分析次数
+              </h3>
+              <div className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                {stats.totalCount}
+              </div>
             </div>
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">主要情绪</h3>
+            <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <span className="mr-2">🎭</span> 主要情绪
+              </h3>
               <div className="grid grid-cols-5 gap-4">
                 {Object.entries(stats.emotionDistribution).map(([emotion, count]: [string, number]) => (
                   <div
                     key={emotion}
-                    className="flex flex-col items-center p-2 rounded-lg bg-gray-50"
+                    className="flex flex-col items-center p-3 rounded-lg bg-gradient-to-b from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 transition-colors duration-300"
                   >
-                    <div className="text-sm text-gray-600">{emotion}</div>
-                    <div className="text-lg font-semibold text-blue-500">{count}</div>
+                    <div className="text-sm text-gray-700 font-medium mb-1">{emotion}</div>
+                    <div className="text-lg font-bold text-blue-600">{count}</div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">情绪趋势</h3>
-              <div className="flex items-end space-x-2 h-20">
+            <div className="bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <span className="mr-2">📈</span> 情绪趋势
+              </h3>
+              <div className="flex items-end space-x-2 h-24">
                 {stats.dailyTrends.map((item, index) => (
                   <div
                     key={index}
-                    className="flex flex-col items-center"
+                    className="flex flex-col items-center group"
                   >
-                    <div
-                      className="w-4 bg-blue-500 rounded-t"
-                      style={{ height: `${item.score}%` }}
-                    />
-                    <div className="text-xs text-gray-500 mt-1">{item.date.slice(5)}</div>
+                    <div className="relative">
+                      <div
+                        className="w-6 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-lg transition-all duration-300 group-hover:from-blue-700 group-hover:to-blue-500"
+                        style={{ height: `${item.score}%` }}
+                      >
+                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          {item.score}%
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs font-medium text-gray-600 mt-2 transform group-hover:scale-110 transition-transform duration-300">
+                      {item.date.slice(5)}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { BellIcon } from '@heroicons/react/24/outline';
-import { useRouter } from 'next/navigation';
-
-const defaultAvatarPath = '/avatars/user1.png';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface UserInfo {
   id: string | number;
@@ -18,41 +16,112 @@ interface UserInfo {
 export default function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [user, setUser] = useState<UserInfo | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // 组件加载时从 localStorage 读取用户信息
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        const userInfo = JSON.parse(savedUser);
-        setUser(userInfo);
-      } catch (error) {
-        console.error('Error parsing user info:', error);
-        localStorage.removeItem('user');
-      }
-    }
-  }, []);
-
-  // 点击页面其他地方关闭下拉菜单
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showDropdown) {
-        const dropdown = document.getElementById('user-dropdown');
-        if (dropdown && !dropdown.contains(event.target as Node)) {
-          setShowDropdown(false);
+    // 组件加载和每次重新渲染时检查用户状态
+    const checkUserStatus = () => {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        try {
+          const userInfo = JSON.parse(savedUser);
+          setUser(userInfo);
+        } catch (error) {
+          console.error('Error parsing user info:', error);
+          localStorage.removeItem('user');
+          setUser(null);
         }
+      } else {
+        setUser(null);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showDropdown]);
+    checkUserStatus();
+
+    // 监听 storage 变化
+    const handleStorageChange = () => {
+      checkUserStatus();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // 添加自定义事件监听器
+    window.addEventListener('userStateChange', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userStateChange', handleStorageChange);
+    };
+  }, []);
+
+  // 如果是首页且未登录，不显示导航栏
+  if (pathname === '/' && !user) {
+    return null;
+  }
 
   const handleSignOut = () => {
     localStorage.removeItem('user');
     setUser(null);
+    setShowDropdown(false);
     router.push('/');
+    // 触发自定义事件
+    window.dispatchEvent(new Event('userStateChange'));
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      // 创建 FormData 对象
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // 上传到图片服务器（这里使用示例 URL，你需要替换为实际的上传服务）
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('上传失败');
+      }
+
+      const { url } = await uploadResponse.json();
+
+      // 更新用户头像
+      const response = await fetch('/api/user/avatar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user?.id,
+          avatarUrl: url,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('更新头像失败');
+      }
+
+      const { user: updatedUser } = await response.json();
+      
+      // 更新本地存储
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      
+      // 触发用户状态更新事件
+      window.dispatchEvent(new Event('userStateChange'));
+    } catch (error) {
+      console.error('更新头像失败:', error);
+      alert('更新头像失败，请重试');
+    }
   };
 
   return (
@@ -61,7 +130,7 @@ export default function Navbar() {
         <div className="flex justify-between h-16 items-center">
           {/* Logo and Brand */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center">
+            <Link href={user ? '/home' : '/'} className="flex items-center">
               <div className="text-[#40bfff] font-bold text-2xl">MindAI</div>
               <div className="ml-2 text-gray-600 text-sm">您身边的心理医生</div>
             </Link>
@@ -69,7 +138,7 @@ export default function Navbar() {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="/" className="text-gray-700 hover:text-[#40bfff]">
+            <Link href={user ? '/home' : '/'} className="text-gray-700 hover:text-[#40bfff]">
               首页
             </Link>
             <Link href="/test-analysis" className="text-gray-700 hover:text-[#40bfff]">
@@ -102,14 +171,24 @@ export default function Navbar() {
                     className="flex items-center space-x-3"
                     onClick={() => setShowDropdown(!showDropdown)}
                   >
-                    <div className="w-8 h-8 relative">
+                    <div 
+                      className="w-8 h-8 relative cursor-pointer"
+                      onClick={handleAvatarClick}
+                    >
                       <Image
-                        src={user.image || defaultAvatarPath}
+                        src={user.image || '/images/default-avatar.png'}
                         alt={user.name || '用户头像'}
                         width={32}
                         height={32}
                         className="rounded-full object-cover"
                         priority
+                      />
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarChange}
                       />
                     </div>
                     <span className="text-gray-700">{user.name}</span>
@@ -134,22 +213,7 @@ export default function Navbar() {
                   )}
                 </div>
               </>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link
-                  href="/auth/login"
-                  className="bg-[#40bfff] text-white px-4 py-2 rounded-md hover:bg-[#3ab1eb] transition-colors"
-                >
-                  登录
-                </Link>
-                <Link
-                  href="/auth/register"
-                  className="bg-[#ff9500] text-white px-4 py-2 rounded-md hover:bg-[#ff8500] transition-colors"
-                >
-                  注册
-                </Link>
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

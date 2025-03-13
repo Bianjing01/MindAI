@@ -1,15 +1,19 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Emblema_One } from 'next/font/google';
 import './globals.css';
-import Providers from './providers';
-import Navbar from './components/Navbar';
-import FloatingMenu from './components/FloatingMenu';
+import RootLayoutClient from './components/RootLayoutClient';
 
 const inter = Inter({ subsets: ['latin'] });
 
+const emblemaOne = Emblema_One({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-emblema-one',
+});
+
 export const metadata: Metadata = {
-  title: 'MindAI - 您身边的心理医生',
-  description: '专业的AI心理咨询和测试平台',
+  title: 'Mind AI - 您身边的心理医生',
+  description: 'AI驱动的心理健康服务平台',
 };
 
 export default function RootLayout({
@@ -18,15 +22,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="zh">
-      <body className={inter.className}>
-        <Providers>
-          <Navbar />
-          <main className="min-h-screen">
-            {children}
-          </main>
-        </Providers>
-        <FloatingMenu />
+    <html lang="zh-CN">
+      <body className={`${inter.className} ${emblemaOne.variable}`}>
+        <RootLayoutClient>
+          {children}
+        </RootLayoutClient>
       </body>
     </html>
   );
