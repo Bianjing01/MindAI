@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link'
 import Image from 'next/image'
 import AuthModal from './components/AuthModal'
@@ -14,12 +14,24 @@ export default function LandingPage() {
     mode: 'login'
   });
 
+  useEffect(() => {
+    // 检查 URL 参数
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('login')) {
+      setAuthModal({ isOpen: true, mode: 'login' });
+    } else if (urlParams.has('register')) {
+      setAuthModal({ isOpen: true, mode: 'register' });
+    }
+  }, []);
+
   const openAuthModal = (mode: 'login' | 'register') => {
     setAuthModal({ isOpen: true, mode });
   };
 
   const closeAuthModal = () => {
     setAuthModal({ ...authModal, isOpen: false });
+    // 清除 URL 参数
+    window.history.replaceState({}, '', window.location.pathname);
   };
 
   const handleModeChange = (mode: 'login' | 'register') => {

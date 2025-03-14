@@ -176,45 +176,45 @@ export default function AIChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white p-4">
+    <div className="min-h-screen bg-[#EBF5FF] p-6">
       <div className="max-w-4xl mx-auto">
         {/* 只在非根路径下显示导航栏 */}
         {pathname !== '/' && (
-          <div className="flex items-center space-x-2 mb-4">
-            <button className="p-2 hover:bg-purple-100 rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="flex items-center space-x-3 mb-6">
+            <button className="p-2 hover:bg-blue-100 rounded-lg transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <h1 className="text-xl font-medium">语音生成</h1>
+            <h1 className="text-2xl font-medium text-blue-700">AI 聊天</h1>
           </div>
         )}
 
-        <div className="grid grid-cols-[300px,1fr] gap-4">
+        <div className="grid grid-cols-[280px,1fr] gap-6">
           {/* 左侧控制面板 */}
-          <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm">
+          <div className="space-y-6 bg-white p-6 rounded-2xl shadow-sm">
             {/* Model 选择 */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Model</label>
+              <label className="block text-sm font-medium text-blue-700">Model</label>
               <div className="relative">
                 <input
                   type="text"
                   value={VOICE_CONFIG.MODEL}
                   disabled
-                  className="w-full p-2 border border-gray-300 rounded-lg bg-gray-50"
+                  className="w-full p-3 border-2 border-blue-100 rounded-xl bg-blue-50 text-blue-700"
                 />
               </div>
             </div>
 
             {/* 倍速调节 */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex justify-between">
-                <label className="block text-sm font-medium text-gray-700">倍速</label>
+                <label className="block text-sm font-medium text-blue-700">倍速</label>
                 <input
                   type="number"
                   value={speed}
                   onChange={(e) => setSpeed(Number(e.target.value))}
-                  className="w-20 p-2 border border-gray-300 rounded-lg text-right"
+                  className="w-24 p-2 border-2 border-blue-100 rounded-xl text-right focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
                   step="0.1"
                   min="0.5"
                   max="2.0"
@@ -224,7 +224,7 @@ export default function AIChatPage() {
                 type="range"
                 value={speed}
                 onChange={(e) => setSpeed(Number(e.target.value))}
-                className="w-full accent-purple-500"
+                className="w-full accent-blue-500"
                 min="0.5"
                 max="2.0"
                 step="0.1"
@@ -232,14 +232,14 @@ export default function AIChatPage() {
             </div>
 
             {/* 音量增益调节 */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex justify-between">
-                <label className="block text-sm font-medium text-gray-700">音量增益 (dB)</label>
+                <label className="block text-sm font-medium text-blue-700">音量增益 (dB)</label>
                 <input
                   type="number"
                   value={gain}
                   onChange={(e) => setGain(Number(e.target.value))}
-                  className="w-20 p-2 border border-gray-300 rounded-lg text-right"
+                  className="w-24 p-2 border-2 border-blue-100 rounded-xl text-right focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
                   step="1"
                   min="-10"
                   max="10"
@@ -249,7 +249,7 @@ export default function AIChatPage() {
                 type="range"
                 value={gain}
                 onChange={(e) => setGain(Number(e.target.value))}
-                className="w-full accent-purple-500"
+                className="w-full accent-blue-500"
                 min="-10"
                 max="10"
                 step="1"
@@ -258,12 +258,12 @@ export default function AIChatPage() {
 
             {/* 音色选择 */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">音色</label>
+              <label className="block text-sm font-medium text-blue-700">音色</label>
               <div className="relative">
                 <select
                   value={currentVoice}
                   onChange={(e) => setCurrentVoice(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-lg"
+                  className="w-full p-3 border-2 border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
                 >
                   {voices.map((voice) => (
                     <option key={voice.id} value={voice.id}>
@@ -276,18 +276,18 @@ export default function AIChatPage() {
           </div>
 
           {/* 右侧聊天区域 */}
-          <div className="bg-white rounded-lg shadow-sm flex flex-col">
+          <div className="bg-white rounded-2xl shadow-sm flex flex-col">
             {/* 聊天记录 */}
-            <div className="flex-1 p-4 overflow-y-auto">
+            <div className="flex-1 p-6 overflow-y-auto">
               {messages.map((message, index) => (
                 <div
                   key={index}
                   className={`flex ${message.isAI ? 'justify-start' : 'justify-end'} mb-4`}
                 >
                   <div
-                    className={`max-w-[70%] rounded-lg p-3 ${
+                    className={`max-w-[70%] rounded-2xl p-4 ${
                       message.isAI
-                        ? 'bg-gray-100 text-gray-800'
+                        ? 'bg-blue-50 text-blue-800'
                         : 'bg-blue-500 text-white'
                     }`}
                   >
@@ -296,7 +296,7 @@ export default function AIChatPage() {
                       {message.isAI && (
                         <button
                           onClick={() => generateVoice(message.text)}
-                          className="ml-2 text-xs opacity-50 hover:opacity-100 transition-opacity"
+                          className="ml-3 text-base opacity-70 hover:opacity-100 transition-opacity"
                           disabled={isGeneratingVoice}
                         >
                           {isGeneratingVoice ? '🔄' : '🔊'}
@@ -308,11 +308,11 @@ export default function AIChatPage() {
               ))}
               {isProcessing && (
                 <div className="flex justify-start mb-4">
-                  <div className="bg-gray-100 rounded-lg p-3">
+                  <div className="bg-blue-50 rounded-2xl p-4">
                     <div className="flex space-x-2">
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                      <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"></div>
+                      <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
                     </div>
                   </div>
                 </div>
@@ -321,12 +321,12 @@ export default function AIChatPage() {
             </div>
 
             {/* 输入区域 */}
-            <div className="border-t p-4">
-              <div className="flex space-x-2">
+            <div className="border-t border-blue-100 p-6">
+              <div className="flex space-x-3">
                 <button
                   onClick={handleVoiceRecording}
-                  className={`p-2 rounded-full ${
-                    isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-200'
+                  className={`p-3 rounded-xl ${
+                    isRecording ? 'bg-red-500 animate-pulse' : 'bg-blue-100'
                   } hover:opacity-80 transition-colors`}
                   title={isRecording ? "点击停止录音" : "点击开始录音"}
                 >
@@ -338,16 +338,16 @@ export default function AIChatPage() {
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder="请输入..."
-                  className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="flex-1 p-3 border-2 border-blue-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 text-lg"
                   disabled={isRecording}
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={isRecording || !inputText.trim()}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
+                  className={`px-6 py-3 rounded-xl text-lg transition-colors ${
                     isRecording || !inputText.trim()
-                      ? 'bg-gray-300 cursor-not-allowed'
-                      : 'bg-purple-500 text-white hover:bg-purple-600'
+                      ? 'bg-gray-200 cursor-not-allowed'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
                   }`}
                 >
                   发送

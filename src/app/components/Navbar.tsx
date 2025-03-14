@@ -131,7 +131,14 @@ export default function Navbar() {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href={user ? '/home' : '/'} className="flex items-center">
-              <div className="text-[#40bfff] font-bold text-2xl">MindAI</div>
+              <Image
+                src="/logo.png"
+                alt="MindAI Logo"
+                width={180}
+                height={60}
+                className="h-14 w-auto"
+                priority
+              />
               <div className="ml-2 text-gray-600 text-sm">您身边的心理医生</div>
             </Link>
           </div>
@@ -213,7 +220,22 @@ export default function Navbar() {
                   )}
                 </div>
               </>
-            ) : null}
+            ) : (
+              <>
+                <button
+                  onClick={() => router.push('/?login=true')}
+                  className="px-4 py-2 text-[#40bfff] hover:text-blue-600 font-medium"
+                >
+                  登录
+                </button>
+                <button
+                  onClick={() => router.push('/?register=true')}
+                  className="px-4 py-2 bg-[#40bfff] text-white rounded-md hover:bg-blue-600 font-medium"
+                >
+                  注册
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

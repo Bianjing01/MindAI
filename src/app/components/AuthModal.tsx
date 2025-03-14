@@ -91,7 +91,7 @@ export default function AuthModal({ isOpen, onClose, mode, onModeChange }: AuthM
           <div className="relative">
             <div className="text-center mb-8">
               <h2 className="text-4xl font-normal text-green-800 mb-2" style={{ fontFamily: 'var(--font-emblema-one)' }}>
-                JULIANA & TAYLOR
+                Mind AI
               </h2>
             </div>
           </div>
